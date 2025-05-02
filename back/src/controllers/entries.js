@@ -30,44 +30,104 @@ const createEntry = async (req, res, next) => {
 };
 
 // Get all entries (public ones from other users, all from current user)
+// In your backend entries.js controller
+// In your backend entries.js controller
 const getAllEntries = async (req, res, next) => {
-  try {
-    const userId = req.user?.id;
-    
-    // Build query conditions
-    const where = userId
-      ? {
-          OR: [
-            { visibility: 'PUBLIC' },
-            { userId: userId }
-          ]
-        }
-      : { visibility: 'PUBLIC' };
-    
-    const entries = await prisma.entry.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
+    try {
+      const userId = req.user?.id;
+      
+      console.log("Fetching entries for user ID:", userId);
+      
+      // Let's check if we have entries in the database
+      const countAll = await prisma.entry.count();
+      console.log("Total entries in database:", countAll);
+      
+      // Count private entries
+      const countPrivate = await prisma.entry.count({
+        where: { visibility: 'PRIVATE' }
+      });
+      console.log("Private entries in database:", countPrivate);
+      
+      // Direct approach: Get all public entries + user's private entries
+      let entries = [];
+      
+      // Get all public entries
+      const publicEntries = await prisma.entry.findMany({
+        where: { visibility: 'PUBLIC' },
+        include: { user: { select: { id: true, name: true } } },
+      });
+      console.log("Found public entries:", publicEntries.length);
+      entries = [...publicEntries];
+      
+      // If user is logged in, add their private entries
+      if (userId) {
+        const privateEntries = await prisma.entry.findMany({
+          where: { 
+            AND: [
+              { visibility: 'PRIVATE' },
+              { userId: userId }
+            ]
+          },
+          include: { user: { select: { id: true, name: true } } },
+        });
+        console.log("Found user's private entries:", privateEntries.length);
+        entries = [...entries, ...privateEntries];
       }
-    });
-    
-    res.status(200).json({
-      success: true,
-      count: entries.length,
-      data: entries
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+      
+      // Sort by creation date (newest first)
+      entries.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      console.log("Total entries to return:", entries.length);
+      console.log("Entry visibilities:", entries.map(e => e.visibility));
+      
+      res.status(200).json({
+        success: true,
+        count: entries.length,
+        data: entries
+      });
+    } catch (error) {
+      console.error("Error in getAllEntries:", error);
+      next(error);
+    }
+  };
+
+// In your entries.js controller
+const getUserEntries = async (req, res, next) => {
+    try {
+      const userId = req.user?.id;
+      
+      if (!userId) {
+        return next(new AppError('User not authenticated', 401));
+      }
+      
+      // Get all entries belonging to the user regardless of visibility
+      const entries = await prisma.entry.findMany({
+        where: { userId: userId },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+      
+      console.log(`Found ${entries.length} entries for user ${userId}`);
+      
+      res.status(200).json({
+        success: true,
+        count: entries.length,
+        data: entries
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+  
 
 // Get a single entry by ID
 const getEntryById = async (req, res, next) => {
@@ -152,10 +212,11 @@ const deleteEntry = async (req, res, next) => {
   }
 };
 
-module.exports = {
-  createEntry,
-  getAllEntries,
-  getEntryById,
-  updateEntry,
-  deleteEntry
-};
+  module.exports = {
+    createEntry,
+    getAllEntries,
+    getEntryById,
+    updateEntry,
+    deleteEntry,
+    getUserEntries
+  };
