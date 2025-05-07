@@ -5,39 +5,65 @@ const prisma = require('../utils/prisma');
 // Verify Firebase token and attach user to request
 const authMiddleware = async (req, res, next) => {
   try {
+    // Inicializar valores por defecto explícitamente
+    req.user = null;
+    req.isAdmin = false;
+
     const authHeader = req.headers.authorization;
-    
+
+    console.log('Auth headers:', req.headers.authorization ? 'Token presente' : 'No hay token');
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return next(new AppError('Not authenticated. No token provided.', 401));
+      console.log('⚠️ No hay token o formato incorrecto');
+      return next(); // Continuar sin error, solo con valores por defecto
     }
-    
+
     const token = authHeader.split(' ')[1];
-    
-    // Verify the token with Firebase
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    
-    // Find or create user in our database
-    let user = await prisma.user.findUnique({
-      where: { firebaseId: decodedToken.uid }
-    });
-    
-    if (!user) {
-      // First time login, create user in our database
-      user = await prisma.user.create({
-        data: {
-          firebaseId: decodedToken.uid,
-          email: decodedToken.email,
-          name: decodedToken.name || decodedToken.email.split('@')[0]
-        }
+    console.log('Token recibido (primeros 20 caracteres):', token.substring(0, 20) + '...');
+
+    try {
+      // Verify the token with Firebase
+      const decodedToken = await admin.auth().verifyIdToken(token);
+      console.log('✅ Token verificado para:', decodedToken.email);
+
+      // Find or create user in our database
+      let user = await prisma.user.findUnique({
+        where: { firebaseId: decodedToken.uid }
       });
+
+      console.log('Usuario encontrado en DB:', user ? 'Sí' : 'No');
+
+      if (!user) {
+        // First time login, create user in our database
+        user = await prisma.user.create({
+          data: {
+            firebaseId: decodedToken.uid,
+            email: decodedToken.email,
+            name: decodedToken.name || decodedToken.email.split('@')[0],
+            role: 'USER'
+          }
+        });
+        console.log('Nuevo usuario creado:', user.email);
+      }
+
+      // Attach user to request
+      req.user = user;
+      req.isAdmin = user.role === 'ADMIN';
+      console.log(`Usuario adjuntado a request: ID=${user.id}, Admin=${req.isAdmin}`);
+      next();
+    } catch (tokenError) {
+      console.error('❌ Error verificando token:', tokenError.message);
+      return next(new AppError('Not authenticated. Invalid token.', 401));
     }
-    
-    // Attach user to request
-    req.user = user;
-    next();
   } catch (error) {
-    return next(new AppError('Not authenticated. Invalid token.', 401));
+    console.error('❌ Error general en authMiddleware:', error.message);
+    req.user = null;
+    req.isAdmin = false;
+    next(); // Continuar con valores por defecto
   }
+
+  // Al final del middleware, añade:
+  console.log(`Valores finales: req.user=${!!req.user}, req.isAdmin=${req.isAdmin}`);
 };
 
 // Check if user is admin
@@ -50,26 +76,32 @@ const isAdmin = (req, res, next) => {
 
 // Check if user owns the entry
 const isEntryOwner = async (req, res, next) => {
-  try {
-    const entryId = req.params.id;
-    const userId = req.user.id;
-    
-    const entry = await prisma.entry.findUnique({
-      where: { id: entryId }
-    });
-    
-    if (!entry) {
-      return next(new AppError('Entry not found', 404));
+    try {
+      const entryId = req.params.id;
+      const userId = req.user.id;
+      const isAdmin = req.user.role === 'ADMIN';
+      
+      // Admins can edit any entry
+      if (isAdmin) {
+        return next();
+      }
+      
+      const entry = await prisma.entry.findUnique({
+        where: { id: entryId }
+      });
+      
+      if (!entry) {
+        return next(new AppError('Entry not found', 404));
+      }
+      
+      if (entry.userId !== userId) {
+        return next(new AppError('Not authorized. You do not own this entry.', 403));
+      }
+      
+      next();
+    } catch (error) {
+      next(error);
     }
-    
-    if (entry.userId !== userId && req.user.role !== 'ADMIN') {
-      return next(new AppError('Not authorized. You do not own this entry.', 403));
-    }
-    
-    next();
-  } catch (error) {
-    next(error);
-  }
-};
+  };
 
 module.exports = { authMiddleware, isAdmin, isEntryOwner };
