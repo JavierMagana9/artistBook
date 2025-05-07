@@ -6,12 +6,11 @@ const { authMiddleware, isEntryOwner } = require('../middleware/auth');
 //Specific route for user entries
 router.get('/user-entries', authMiddleware, getUserEntries);
 
-// Public routes
-router.get('/', getAllEntries);
-router.get('/:id', getEntryById);
+// Rutas que requieren autenticación opcional
+router.get('/', authMiddleware, getAllEntries);
+router.get('/:id', authMiddleware, getEntryById);
 
 // Protected routes
-
 router.post('/', authMiddleware, createEntry);
 router.put('/:id', authMiddleware, isEntryOwner, updateEntry);
 router.delete('/:id', authMiddleware, isEntryOwner, deleteEntry);

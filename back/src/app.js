@@ -6,20 +6,21 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Create Express app
+// Inicializar la aplicación Express
 const app = express();
 
-// Middlewares
-app.use(helmet()); // Security headers
-app.use(cors());   // Enable CORS
-app.use(express.json()); // Parse JSON bodies
+// Configurar middlewares básicos
+app.use(cors());
+app.use(helmet());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check route
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Artist Book API is running' });
 });
 
-// Import routes (we'll create these next)
+// Import routes
 const userRoutes = require('./routes/users');
 const entryRoutes = require('./routes/entries');
 

@@ -6,7 +6,8 @@ import { getEntry, deleteEntry } from '../utils/api';
 export default function EntryDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
+  const isAdmin = userData?.role === 'ADMIN';
   
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,6 +76,8 @@ export default function EntryDetails() {
   }
   
   const isOwner = currentUser && entry.userId === currentUser.uid;
+  const canEdit = isOwner;
+  const canDelete = isOwner || isAdmin;
   
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -93,7 +96,11 @@ export default function EntryDetails() {
         </div>
         <div className="flex items-center space-x-4">
           <span>{new Date(entry.createdAt).toLocaleDateString()}</span>
-          <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs">
+          <span className={`px-2 py-1 rounded-full ${
+            entry.visibility === 'PRIVATE' 
+              ? 'bg-gray-100 text-gray-800' 
+              : 'bg-green-100 text-green-800'
+          } text-xs`}>
             {entry.visibility}
           </span>
         </div>
@@ -116,22 +123,32 @@ export default function EntryDetails() {
         ))}
       </div>
       
-      {isOwner && (
-        <div className="mt-8 flex space-x-4">
+      <div className="mt-8 flex space-x-4">
+        {canEdit && (
           <Link 
             to={`/entries/edit/${entry.id}`}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           >
             Edit Entry
           </Link>
+        )}
+        
+        {canDelete && (
           <button
             onClick={handleDelete}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
           >
             Delete Entry
           </button>
-        </div>
-      )}
+        )}
+        
+        {/* Admin badge if viewing someone else's entry */}
+        {isAdmin && !isOwner && (
+          <span className="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-md">
+            Admin View
+          </span>
+        )}
+      </div>
     </div>
   );
 }
