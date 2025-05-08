@@ -1,62 +1,83 @@
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { useAuth } from '../contexts/AuthContext';
+import { FcGoogle } from 'react-icons/fc';
 
-export default function Signup() {
-  const [name, setName] = useState('');
+const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const auth = getAuth();
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      return setError('Passwords do not match');
-    }
+    setLoading(true);
+    setError(null);
     
     try {
-      setError('');
-      setLoading(true);
-      await signup(email, password, name);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log("Usuario registrado:", userCredential.user);
+      setUser(userCredential.user);
       navigate('/dashboard');
-    } catch (err) {
-      setError('Failed to create an account: ' + err.message);
+    } catch (error) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
-  }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      // Firebase manejará automáticamente la actualización del estado
+      console.log("Usuario registrado con Google");
+      navigate('/dashboard');
+    } catch (error) {
+      setError(error.message);
+      console.error("Error al registrarse con Google:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-md">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center">Crear cuenta</h2>
+        
+        {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
+        
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded mb-4 hover:bg-gray-50 transition"
+        >
+          <FcGoogle size={20} />
+          <span>Registrarse con Google</span>
+        </button>
+        
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">O con email</span>
+          </div>
         </div>
         
-        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="sr-only">Full name</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Full name"
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">Correo electrónico</label>
               <input
                 id="email"
                 name="email"
@@ -64,12 +85,12 @@ export default function Signup() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Correo electrónico"
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">Contraseña</label>
               <input
                 id="password"
                 name="password"
@@ -77,45 +98,28 @@ export default function Signup() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-              />
-            </div>
-            <div>
-              <label htmlFor="confirm-password" className="sr-only">Confirm password</label>
-              <input
-                id="confirm-password"
-                name="confirm-password"
-                type="password"
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm password"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                placeholder="Contraseña"
               />
             </div>
           </div>
-
-          <div>
+          <div className="mt-6">
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              {loading ? 'Creating account...' : 'Sign up'}
+              {loading ? 'Creando cuenta...' : 'Registrarse'}
             </button>
           </div>
-          
-          <div className="text-sm text-center">
-            <p>
-              Already have an account?{' '}
-              <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Sign in
-              </Link>
-            </p>
-          </div>
         </form>
+        
+        <p className="mt-4 text-center text-sm text-gray-600">
+          ¿Ya tienes cuenta? <Link to="/login" className="text-blue-600 hover:underline">Inicia sesión</Link>
+        </p>
       </div>
     </div>
   );
-}
+};
+
+export default SignUp;

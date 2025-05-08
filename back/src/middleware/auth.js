@@ -24,23 +24,26 @@ const authMiddleware = async (req, res, next) => {
     try {
       // Verify the token with Firebase
       const decodedToken = await admin.auth().verifyIdToken(token);
-      console.log('✅ Token verificado para:', decodedToken.email);
+      const email = decodedToken.email;
 
-      // Find or create user in our database
+      // Buscar usuario por email en lugar de por firebaseId
       let user = await prisma.user.findUnique({
-        where: { firebaseId: decodedToken.uid }
+        where: { email: email }
       });
 
       console.log('Usuario encontrado en DB:', user ? 'Sí' : 'No');
 
       if (!user) {
         // First time login, create user in our database
+        const displayName = decodedToken.name || decodedToken.email.split('@')[0];
+        
         user = await prisma.user.create({
           data: {
             firebaseId: decodedToken.uid,
             email: decodedToken.email,
-            name: decodedToken.name || decodedToken.email.split('@')[0],
-            role: 'USER'
+            name: displayName,
+            role: 'USER',
+            provider: decodedToken.firebase.sign_in_provider || 'email'
           }
         });
         console.log('Nuevo usuario creado:', user.email);
