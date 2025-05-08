@@ -9,7 +9,8 @@ import Signup from '../pages/Signup';
 import Dashboard from '../pages/Dashboard';
 import AdminPanel from '../pages/AdminPanel';
 import EntryForm from '../pages/EntryForm';
-//import EntryDetails from '../pages/EntryDetails';
+import EntryDetail from '../pages/EntryDetail';
+import EditEntry from '../pages/EditEntry';
 
 // Private route component
 function PrivateRoute({ children, requireAdmin = false }) {
@@ -61,19 +62,37 @@ export default function AppRoutes() {
           </PrivateRoute>
         } 
       />
+      
+      {/* Entry routes */}
       <Route 
         path="/entries/new" 
         element={
-            <PrivateRoute>
+          <PrivateRoute>
             <EntryForm />
-            </PrivateRoute>
-        } />
+          </PrivateRoute>
+        } 
+      />
+      
+      <Route 
+        path="/entries/:id" 
+        element={
+          <PrivateRoute>
+            <EntryDetail />
+          </PrivateRoute>
+        } 
+      />
+      
+      <Route 
+        path="/entries/:id/edit" 
+        element={
+          <PrivateRoute>
+            <EditEntry />
+          </PrivateRoute>
+        } 
+      />
 
       {/* Default route */}
-      <Route 
-        path="/" 
-        element={<Navigate to="/dashboard" />} 
-      />
+      <Route path="/" element={<Navigate to="/dashboard" />} />
       
       {/* Catch-all for unmatched routes */}
       <Route path="*" element={<Navigate to="/dashboard" />} />
