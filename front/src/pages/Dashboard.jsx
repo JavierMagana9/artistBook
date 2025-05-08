@@ -164,7 +164,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex space-x-3">
                     <Link
-                      to={`/entries/edit/${entry.id}`}
+                      to={`/entries/${entry.id}/edit`}
                       className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
                     >
                       Edit
