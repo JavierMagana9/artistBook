@@ -19,6 +19,7 @@ model User {
   firebaseId String   @unique
   name       String?
   role       Role     @default(USER)
+  provider   String?  // Añade este campo para guardar el proveedor (google.com, password, etc.)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   entries    Entry[]
