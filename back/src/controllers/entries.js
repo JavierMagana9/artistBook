@@ -164,7 +164,6 @@ const getUserEntries = async (req, res, next) => {
 const getEntryById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
     
     const entry = await prisma.entry.findUnique({
       where: { id },
@@ -172,26 +171,46 @@ const getEntryById = async (req, res, next) => {
         user: {
           select: {
             id: true,
-            name: true
+            name: true,
+            email: true
           }
         }
       }
     });
-    
+
     if (!entry) {
-      return next(new AppError('Entry not found', 404));
+      return res.status(404).json({
+        success: false,
+        error: 'Entry not found'
+      });
     }
-    
-    // Check if the entry is private and doesn't belong to current user
-    if (entry.visibility === 'PRIVATE' && entry.userId !== userId) {
-      return next(new AppError('Not authorized to view this entry', 403));
+
+    // Añade logs para depuración
+    console.log('Entry access check:', {
+      entryId: id,
+      entryUserId: entry.userId,
+      entryVisibility: entry.visibility,
+      requestUserId: req.user.id,
+      isAdmin: req.isAdmin,
+      isOwner: entry.userId === req.user.id,
+      isPublic: entry.visibility === 'PUBLIC'
+    });
+
+    // Verificar permisos
+    if (req.isAdmin || entry.userId === req.user.id || entry.visibility === 'PUBLIC') {
+      return res.status(200).json({
+        success: true,
+        data: entry
+      });
     }
-    
-    res.status(200).json({
-      success: true,
-      data: entry
+
+    // Si no cumple ninguna condición anterior, no está autorizado
+    return res.status(403).json({
+      success: false,
+      error: 'Not authorized to view this entry'
     });
   } catch (error) {
+    console.error('Error retrieving entry:', error);
     next(error);
   }
 };

@@ -79,15 +79,84 @@ const getAllUsers = async (req, res, next) => {
 // Delete user (admin only)
 const deleteUser = async (req, res, next) => {
   try {
+    // Verificar que sea administrador (aunque el middleware ya debería haberlo hecho)
+    if (!req.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Only administrators can delete users'
+      });
+    }
+
     const { id } = req.params;
     
+    // No permitir que un admin se elimine a sí mismo
+    if (id === req.user.id) {
+      return res.status(400).json({
+        success: false,
+        error: 'You cannot delete your own account'
+      });
+    }
+
+    // Verificar que el usuario existe
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Primero eliminamos todas las entradas del usuario
+    await prisma.entry.deleteMany({
+      where: { userId: id }
+    });
+
+    // Luego eliminamos el usuario
     await prisma.user.delete({
       where: { id }
     });
+
+    res.status(200).json({
+      success: true,
+      message: 'User and all their entries deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get user by ID
+const getUserById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true,
+        _count: {
+          select: { entries: true }
+        }
+      }
+    });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
     
     res.status(200).json({
       success: true,
-      message: 'User deleted successfully'
+      data: user
     });
   } catch (error) {
     next(error);
@@ -95,8 +164,9 @@ const deleteUser = async (req, res, next) => {
 };
 
 module.exports = {
+  getAllUsers,
+  getUserById,
   getUserProfile,
   updateUserProfile,
-  getAllUsers,
   deleteUser
 };

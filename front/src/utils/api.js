@@ -1,29 +1,20 @@
 import axios from 'axios';
-import { getAuth } from 'firebase/auth';
-
-const BASE_URL = 'http://localhost:5000/api';
 
 const api = axios.create({
-  baseURL: BASE_URL
+  baseURL: 'http://localhost:5000/api'
 });
 
-// Interceptor para incluir el token en TODAS las peticiones
-api.interceptors.request.use(async (config) => {
-  console.log('Interceptor ejecutándose para URL:', config.url);
-  try {
-    const auth = getAuth();
-    if (auth.currentUser) {
-      const token = await auth.currentUser.getIdToken(true);
-      console.log('Token obtenido (primeros 20 caracteres):', token.substring(0, 20) + '...');
+// Interceptor para añadir token a cada solicitud
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.log('⚠️ No hay usuario autenticado');
     }
-  } catch (error) {
-    console.error('❌ Error obteniendo token:', error.message);
-  }
-  return config;
-});
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;
 
@@ -34,7 +25,9 @@ export const setAuthToken = () => {
 };
 
 // User API calls
-export const getUserProfile = () => api.get('/users/profile');
+export const getUserProfile = () => {
+  return api.get('/users/profile');
+};
 export const updateUserProfile = (data) => api.put('/users/profile', data);
 export const getAllUsers = () => api.get('/users');
 export const deleteUser = (id) => api.delete(`/users/${id}`);
