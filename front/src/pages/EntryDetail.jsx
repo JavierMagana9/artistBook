@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -6,27 +6,26 @@ const EntryDetail = () => {
   const { id } = useParams();
   const [entry, setEntry] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError]   = useState(null);
 
   useEffect(() => {
     const fetchEntry = async () => {
       try {
-        const response = await api.get(`/entries/${id}`);
-        setEntry(response.data.data);
-      } catch (error) {
-        console.error('Error getting entry', error);
-        setError('It could not be loaded. Please try again later.');
+        const res = await api.get(`/entries/${id}`);
+        setEntry(res.data.data);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load entry');
       } finally {
         setLoading(false);
       }
     };
-
     fetchEntry();
   }, [id]);
 
   if (loading) return <div className="flex justify-center p-8">Loading entry...</div>;
-  if (error) return <div className="text-red-500 p-8">{error}</div>;
-  if (!entry) return <div className="p-8">Entry not found</div>;
+  if (error)   return <div className="text-red-500 p-8">{error}</div>;
+  if (!entry)  return <div className="p-8">Entry not found</div>;
 
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
@@ -63,10 +62,10 @@ const EntryDetail = () => {
       
       <div className="mt-8 flex gap-4">
         <Link 
-          to={`/edit-entry/${entry.id}`}
+          to={`/entries/${entry.id}/edit`}  // ← Asegurar que usa esta estructura
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          Edita entry
+          Edit Entry
         </Link>
       </div>
     </div>

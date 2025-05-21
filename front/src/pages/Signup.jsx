@@ -19,12 +19,27 @@ const SignUp = () => {
     setError(null);
     
     try {
+      // Registra el usuario
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log("Usuario registrado:", userCredential.user);
-      setUser(userCredential.user);
-      navigate('/dashboard');
+      
+      // Asegúrate de que esto se ejecuta
+      console.log("Intentando navegar al dashboard...");
+      
+      // Agregar un pequeño retraso para asegurar que Firebase ha terminado
+      setTimeout(() => {
+        navigate('/dashboard');
+        console.log("Navegación ejecutada");
+      }, 500);
+      
     } catch (error) {
-      setError(error.message);
+      console.error("Registration error:", error);
+      
+      if (error.code === 'auth/email-already-in-use') {
+        setError("This email is already registered. Please log in instead.");
+      } else {
+        setError(`Registration failed: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }

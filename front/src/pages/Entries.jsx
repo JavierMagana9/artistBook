@@ -1,7 +1,7 @@
 // Create src/pages/Entries.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getEntries, deleteEntry } from '../utils/api';
+import api from '../utils/api';
 import { Link } from 'react-router-dom';
 
 export default function Entries() {
@@ -11,35 +11,35 @@ export default function Entries() {
   const { currentUser } = useAuth();
 
   useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const res = await api.get('/entries');
+        setEntries(res.data.data);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load entries');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchEntries();
   }, []);
 
-  const fetchEntries = async () => {
-    try {
-      setLoading(true);
-      const response = await getEntries();
-      setEntries(response.data.data);
-    } catch (err) {
-      setError('Failed to fetch entries');
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteEntry = async (entryId) => {
-    if (window.confirm('Are you sure you want to delete this entry?')) {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta entrada?')) {
       try {
-        await deleteEntry(entryId);
+        await api.delete(`/entries/${entryId}`);
+        // Actualizar la lista de entradas
         setEntries(entries.filter(entry => entry.id !== entryId));
-      } catch (err) {
-        setError('Failed to delete entry');
-        console.error(err);
+      } catch (error) {
+        console.error('Error al eliminar la entrada:', error);
+        setError('No se pudo eliminar la entrada.');
       }
     }
   };
 
   if (loading) return <div className="text-center p-8">Loading entries...</div>;
+  if (error)   return <div className="text-red-500">{error}</div>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -85,7 +85,7 @@ export default function Entries() {
                       {entry.userId === currentUser.uid && (
                         <>
                           <Link
-                            to={`/entries/edit/${entry.id}`}
+                            to={`/entries/${entry.id}/edit`}
                             className="inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                           >
                             Edit

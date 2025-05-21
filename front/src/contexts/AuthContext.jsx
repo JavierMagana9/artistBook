@@ -1,117 +1,76 @@
-import { createContext, useState, useEffect, useContext } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-  updateProfile
-} from 'firebase/auth';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../utils/firebase';
-import { getUserProfile } from '../utils/api';
-import { setAuthToken } from '../utils/api';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import api, { getUserProfile } from '../utils/api';
 
 const AuthContext = createContext();
+export const useAuth = () => useContext(AuthContext);
 
-export function useAuth() {
-  return useContext(AuthContext);
-}
-
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(null); 
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(null);
 
-  // Sign up function
-  const signup = async (email, password, name) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(userCredential.user, { displayName: name });
-    return userCredential.user;
-  };
-
-  // Login function
-  const login = (email, password) => {
-    return signInWithEmailAndPassword(auth, email, password);
-  };
-
-  // Logout function
-  const logout = () => {
-    return signOut(auth);
-  };
-
-  // Get current user's token
-  const getToken = async () => {
-    if (currentUser) {
-      const token = await currentUser.getIdToken();
-      setToken(token);
-      return token;
-    }
-    return null;
-  };
-
-  // Fetch user data function
-  const fetchUserData = async () => {
-    if (token) {
-      try {
-        // Set the token before making the API call
-        setAuthToken(token);
-        const response = await getUserProfile();
-        setUserData(response.data.data);
-      } catch (err) {
-        console.error('Failed to fetch user data', err);
-        // Don't set userData if there's an error
-      }
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUserData(null);
+      localStorage.removeItem('authToken');
+      delete api.defaults.headers.common['Authorization'];
+    } catch (error) {
+      console.error("Error signing out:", error);
     }
   };
 
-  // Listen for auth state changes
-useEffect(() => {
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed, user:", user?.email);
       setCurrentUser(user);
-      
+
       if (user) {
         try {
-          const newToken = await user.getIdToken();
-          console.log("Got token of length:", newToken.length);
-          setToken(newToken);
-          setAuthToken(newToken);
+          // Get and set token
+          const token = await user.getIdToken();
+          console.log("Got token of length:", token.length);
+          localStorage.setItem('authToken', token);
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          // Fetch user profile from backend
+          try {
+            const res = await getUserProfile();
+            setUserData(res.data.data);
+            console.log("User data fetched:", res.data.data);
+          } catch (profileError) {
+            console.error('Error fetching profile:', profileError);
+            setUserData(null);
+          }
         } catch (err) {
-          console.error("Error getting token:", err);
+          console.error('Error in auth state change:', err);
+          setUserData(null);
         }
       } else {
-        setToken(null);
+        // User signed out
+        localStorage.removeItem('authToken');
+        delete api.defaults.headers.common['Authorization'];
         setUserData(null);
-        setAuthToken(null);
       }
-      
+
       setLoading(false);
     });
-  
-    return unsubscribe;
+
+    return () => unsubscribe();
   }, []);
-  // Separate effect to fetch user data when token changes
-  useEffect(() => {
-    if (token) {
-      fetchUserData();
-    }
-  }, [token]);
 
   const value = {
     currentUser,
     userData,
-    token,
+    isAdmin: userData?.role === 'ADMIN',
     loading,
-    signup,
-    login,
-    logout,
-    getToken,
-    fetchUserData // Expose this to allow manual refresh
+    logout
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
-}
+};

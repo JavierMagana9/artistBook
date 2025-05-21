@@ -69,42 +69,63 @@ const authMiddleware = async (req, res, next) => {
   console.log(`Valores finales: req.user=${!!req.user}, req.isAdmin=${req.isAdmin}`);
 };
 
-// Check if user is admin
-const isAdmin = (req, res, next) => {
-  if (req.user.role !== 'ADMIN') {
-    return next(new AppError('Not authorized. Admin access required.', 403));
+// Middleware para rutas que requieren ser administrador
+const adminMiddleware = (req, res, next) => {
+  if (!req.isAdmin) {
+    return res.status(403).json({
+      success: false,
+      error: 'Admin access required'
+    });
   }
   next();
 };
 
-// Check if user owns the entry
+// Verificar si el usuario es dueño de la entrada o es admin
 const isEntryOwner = async (req, res, next) => {
-    try {
-      const entryId = req.params.id;
-      const userId = req.user.id;
-      const isAdmin = req.user.role === 'ADMIN';
-      
-      // Admins can edit any entry
-      if (isAdmin) {
-        return next();
-      }
-      
-      const entry = await prisma.entry.findUnique({
-        where: { id: entryId }
+  try {
+    const { id } = req.params;
+    
+    // Si no está autenticado
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
       });
-      
-      if (!entry) {
-        return next(new AppError('Entry not found', 404));
-      }
-      
-      if (entry.userId !== userId) {
-        return next(new AppError('Not authorized. You do not own this entry.', 403));
-      }
-      
-      next();
-    } catch (error) {
-      next(error);
     }
-  };
+    
+    // Si es admin, permitir acceso sin verificar propiedad
+    if (req.isAdmin) {
+      return next();
+    }
+    
+    // Buscar la entrada
+    const entry = await prisma.entry.findUnique({
+      where: { id }
+    });
+    
+    if (!entry) {
+      return res.status(404).json({
+        success: false,
+        error: 'Entry not found'
+      });
+    }
+    
+    // Verificar si es el propietario
+    if (entry.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: 'Not authorized to modify this entry'
+      });
+    }
+    
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
-module.exports = { authMiddleware, isAdmin, isEntryOwner };
+module.exports = {
+  authMiddleware,
+  adminMiddleware,
+  isEntryOwner   // Exportar el nuevo middleware
+};

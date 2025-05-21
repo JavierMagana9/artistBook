@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect } from 'react';
-import { setAuthToken } from '../utils/api';
+import api from '../utils/api';
 
 // Pages
 import Login from '../pages/Login';
@@ -12,15 +12,24 @@ import EntryForm from '../pages/EntryForm';
 import EntryDetail from '../pages/EntryDetail';
 import EditEntry from '../pages/EditEntry';
 
-// Private route component
 function PrivateRoute({ children, requireAdmin = false }) {
   const { currentUser, userData, loading } = useAuth();
   
-  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
+  // Debug para ver qué está pasando
+  console.log("PrivateRoute Check:", { 
+    requireAdmin, 
+    currentUser: !!currentUser,
+    userDataExists: !!userData,
+    userRole: userData?.role,
+    isAdmin: userData?.role === 'ADMIN'
+  });
   
+  if (loading) return <div>Loading authentication...</div>;
   if (!currentUser) return <Navigate to="/login" />;
   
+  // Solo comprueba rol si requireAdmin es true
   if (requireAdmin && userData?.role !== 'ADMIN') {
+    console.log("Access denied: User is not admin");
     return <Navigate to="/dashboard" />;
   }
   
@@ -28,73 +37,64 @@ function PrivateRoute({ children, requireAdmin = false }) {
 }
 
 export default function AppRoutes() {
-  const { token } = useAuth();
-  
-  // Set auth token when it changes
   useEffect(() => {
+    const token = localStorage.getItem('authToken');
     if (token) {
-      setAuthToken(token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
-  }, [token]);
+  }, []);
 
   return (
     <Routes>
-      {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      
-      {/* Protected routes */}
-      <Route 
-        path="/dashboard" 
+
+      <Route
+        path="/dashboard"
         element={
           <PrivateRoute>
             <Dashboard />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      {/* Admin routes */}
-      <Route 
-        path="/admin" 
-        element={
-          <PrivateRoute requireAdmin={true}>
-            <AdminPanel />
-          </PrivateRoute>
-        } 
-      />
-      
-      {/* Entry routes */}
-      <Route 
-        path="/entries/new" 
+
+      <Route
+        path="/entries/new"
         element={
           <PrivateRoute>
             <EntryForm />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/entries/:id" 
+
+      <Route
+        path="/entries/:id"
         element={
           <PrivateRoute>
             <EntryDetail />
           </PrivateRoute>
-        } 
+        }
       />
-      
-      <Route 
-        path="/entries/:id/edit" 
+
+      <Route
+        path="/entries/:id/edit"
         element={
           <PrivateRoute>
             <EditEntry />
           </PrivateRoute>
-        } 
+        }
       />
 
-      {/* Default route */}
+      <Route
+        path="/admin"
+        element={
+          <PrivateRoute requireAdmin>
+            <AdminPanel />
+          </PrivateRoute>
+        }
+      />
+
       <Route path="/" element={<Navigate to="/dashboard" />} />
-      
-      {/* Catch-all for unmatched routes */}
       <Route path="*" element={<Navigate to="/dashboard" />} />
     </Routes>
   );
