@@ -7,7 +7,8 @@ const {
   getUserById, 
   updateUserProfile, 
   deleteUser, 
-  getUserProfile 
+  getUserProfile, 
+  updateUser 
 } = require('../controllers/users');
 
 // Importar middleware
@@ -18,7 +19,7 @@ router.get('/profile', authMiddleware, getUserProfile);
 
 // Otras rutas
 router.get('/:id', authMiddleware, getUserById);
-router.put('/:id', authMiddleware, updateUserProfile);
+router.put('/:id', authMiddleware, updateUser);
 router.delete('/:id', authMiddleware, adminMiddleware, deleteUser);
 router.get('/', authMiddleware, adminMiddleware, getAllUsers);
 

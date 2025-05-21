@@ -28,17 +28,19 @@ export const AuthProvider = ({ children }) => {
 
       if (user) {
         try {
-          // Get and set token
           const token = await user.getIdToken();
-          console.log("Got token of length:", token.length);
           localStorage.setItem('authToken', token);
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
           // Fetch user profile from backend
           try {
             const res = await getUserProfile();
-            setUserData(res.data.data);
-            console.log("User data fetched:", res.data.data);
+            const userData = res.data.data;
+            setUserData(userData);
+            
+            // Guardar el ID del usuario para referencia
+            localStorage.setItem('userId', userData.id);
+            
           } catch (profileError) {
             console.error('Error fetching profile:', profileError);
             setUserData(null);
@@ -50,6 +52,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         // User signed out
         localStorage.removeItem('authToken');
+        localStorage.removeItem('userId');
         delete api.defaults.headers.common['Authorization'];
         setUserData(null);
       }

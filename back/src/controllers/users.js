@@ -163,10 +163,83 @@ const getUserById = async (req, res, next) => {
   }
 };
 
+// Actualiza el controlador para soportar cambios de rol por admins
+const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, role } = req.body;
+    
+    // Verificar que el usuario existe
+    const userToUpdate = await prisma.user.findUnique({
+      where: { id }
+    });
+    
+    if (!userToUpdate) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+    
+    // Determinar quién puede actualizar qué campos
+    const updates = {};
+    
+    // El nombre puede ser actualizado por el propio usuario o por un admin
+    if (name) {
+      updates.name = name;
+    }
+    
+    // Solo admins pueden cambiar roles
+    if (role && req.isAdmin) {
+      // Validar que el rol sea válido
+      if (!['USER', 'ADMIN'].includes(role)) {
+        return res.status(400).json({
+          success: false, 
+          error: 'Invalid role. Must be USER or ADMIN'
+        });
+      }
+      updates.role = role;
+    } else if (role && !req.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Only administrators can change user roles'
+      });
+    }
+    
+    // Si no hay actualizaciones, devolver error
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No valid updates provided'
+      });
+    }
+    
+    // Realizar la actualización
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: updates
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        createdAt: updatedUser.createdAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   getUserProfile,
   updateUserProfile,
-  deleteUser
+  deleteUser,
+  updateUser
 };

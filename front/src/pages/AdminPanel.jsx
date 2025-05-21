@@ -8,32 +8,57 @@ export default function AdminPanel() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { currentUser } = useAuth();
-
-  // Función para cargar los datos
-  const fetchAdminData = async () => {
-    try {
-      setLoading(true);
-      const [usersResponse, entriesResponse] = await Promise.all([
-        api.get('/users'),
-        api.get('/entries')
-      ]);
-      setUsers(usersResponse.data.data);
-      setEntries(entriesResponse.data.data);
-    } catch (err) {
-      console.error("Error fetching admin data:", err);
-      setError('Failed to load admin data: ' + (err.response?.data?.message || err.message));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Cargar datos al montar el componente
+  const { userData } = useAuth();
+  
   useEffect(() => {
+    const fetchAdminData = async () => {
+      try {
+        const [usersResponse, entriesResponse] = await Promise.all([
+          api.get('/users'),
+          api.get('/entries')
+        ]);
+        setUsers(usersResponse.data.data);
+        setEntries(entriesResponse.data.data);
+      } catch (err) {
+        setError('Failed to load admin data: ' + (err.response?.data?.message || err.message));
+      } finally {
+        setLoading(false);
+      }
+    };
+    
     fetchAdminData();
   }, []);
-
-  // Función para eliminar un usuario
+  
+  const handleToggleRole = async (user) => {
+    try {
+      // No permitir cambiar el rol del usuario actual
+      if (user.id === userData.id) {
+        alert("You cannot change your own role.");
+        return;
+      }
+      
+      const newRole = user.role === 'ADMIN' ? 'USER' : 'ADMIN';
+      const confirmed = window.confirm(
+        `Are you sure you want to change ${user.email}'s role from ${user.role} to ${newRole}?`
+      );
+      
+      if (confirmed) {
+        const response = await api.put(`/users/${user.id}`, {
+          role: newRole
+        });
+        
+        // Actualizar la lista de usuarios
+        setUsers(users.map(u => 
+          u.id === user.id ? { ...u, role: newRole } : u
+        ));
+        
+        alert(`User role updated successfully to ${newRole}`);
+      }
+    } catch (err) {
+      alert('Failed to change user role: ' + (err.response?.data?.message || err.message));
+    }
+  };
+  
   const handleDeleteUser = async (userId, userName) => {
     if (!window.confirm(`Are you sure you want to delete user ${userName || userId}?`)) {
       return;
@@ -44,7 +69,6 @@ export default function AdminPanel() {
       setUsers(users.filter(user => user.id !== userId));
       alert('User deleted successfully');
     } catch (err) {
-      console.error("Error deleting user:", err);
       alert('Failed to delete user: ' + (err.response?.data?.message || err.message));
     }
   };
@@ -60,7 +84,6 @@ export default function AdminPanel() {
       setEntries(entries.filter(entry => entry.id !== entryId));
       alert('Entry deleted successfully');
     } catch (err) {
-      console.error("Error deleting entry:", err);
       alert('Failed to delete entry: ' + (err.response?.data?.message || err.message));
     }
   };
@@ -118,15 +141,32 @@ export default function AdminPanel() {
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {/* Don't allow deleting own account */}
-                    {localStorage.getItem('userId') !== user.id && (
+                    <div className="flex space-x-4">
+                      {/* Botón para cambiar rol */}
                       <button
-                        onClick={() => handleDeleteUser(user.id, user.name || user.email)}
-                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleToggleRole(user)}
+                        className={`text-sm ${
+                          user.id === userData.id 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : user.role === 'ADMIN'
+                              ? 'text-yellow-600 hover:text-yellow-900'
+                              : 'text-green-600 hover:text-green-900'
+                        }`}
+                        disabled={user.id === userData.id}
                       >
-                        Delete
+                        {user.role === 'ADMIN' ? 'Make User' : 'Make Admin'}
                       </button>
-                    )}
+                      
+                      {/* No permitir eliminar el usuario actual */}
+                      {user.id !== userData.id && (
+                        <button
+                          onClick={() => handleDeleteUser(user.id, user.name || user.email)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
