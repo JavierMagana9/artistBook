@@ -32,21 +32,13 @@ const createEntry = async (req, res, next) => {
 // In your getAllEntries controller
 const getAllEntries = async (req, res, next) => {
   try {
-    console.log("Request headers:", req.headers.authorization ? "Token presente" : "Sin token");
-    console.log("Request object tiene user?", !!req.user);
-    console.log("Request object tiene isAdmin?", typeof req.isAdmin !== 'undefined');
-    console.log("Valor de isAdmin:", req.isAdmin);
-    
     const userId = req.user?.id;
     const isAdmin = req.isAdmin === true; // Coerción explícita a booleano
-    
-    console.log("Getting entries for user:", userId, "Is Admin:", isAdmin);
     
     let entries;
     
     if (isAdmin) {
       // Important: This SQL-like query should return ALL entries for admins
-      console.log("Admin user detected - fetching ALL entries");
       entries = await prisma.entry.findMany({
         include: {
           user: {
@@ -61,13 +53,6 @@ const getAllEntries = async (req, res, next) => {
           createdAt: 'desc'
         }
       });
-      console.log(`Found ${entries.length} total entries for admin, including private entries`);
-      console.log("Sample entries:", entries.slice(0, 2).map(e => ({ 
-        id: e.id, 
-        title: e.title, 
-        visibility: e.visibility, 
-        userId: e.userId 
-      })));
     } else if (userId) {
       // Regular users see public entries and their own entries
       entries = await prisma.entry.findMany({
@@ -89,7 +74,6 @@ const getAllEntries = async (req, res, next) => {
           createdAt: 'desc'
         }
       });
-      console.log("User view - public and own entries:", entries.length);
     } else {
       // Non-authenticated users only see public entries
       entries = await prisma.entry.findMany({
@@ -106,7 +90,6 @@ const getAllEntries = async (req, res, next) => {
           createdAt: 'desc'
         }
       });
-      console.log("Public view - only public entries:", entries.length);
     }
     
     res.status(200).json({
@@ -115,7 +98,6 @@ const getAllEntries = async (req, res, next) => {
       data: entries
     });
   } catch (error) {
-    console.error("Error in getAllEntries:", error);
     next(error);
   }
 };
@@ -146,16 +128,12 @@ const getUserEntries = async (req, res, next) => {
       }
     });
     
-    console.log("User ID for entries:", userId);
-    console.log("Found entries:", entries.length);
-    console.log("Entry data sample:", entries.slice(0, 2));
     res.status(200).json({
       success: true,
       count: entries.length,
       data: entries
     });
   } catch (error) {
-    console.error("Error in getUserEntries:", error);
     next(error);
   }
 };
@@ -185,17 +163,6 @@ const getEntryById = async (req, res, next) => {
       });
     }
 
-    // Añade logs para depuración
-    console.log('Entry access check:', {
-      entryId: id,
-      entryUserId: entry.userId,
-      entryVisibility: entry.visibility,
-      requestUserId: req.user.id,
-      isAdmin: req.isAdmin,
-      isOwner: entry.userId === req.user.id,
-      isPublic: entry.visibility === 'PUBLIC'
-    });
-
     // Verificar permisos
     if (req.isAdmin || entry.userId === req.user.id || entry.visibility === 'PUBLIC') {
       return res.status(200).json({
@@ -210,7 +177,6 @@ const getEntryById = async (req, res, next) => {
       error: 'Not authorized to view this entry'
     });
   } catch (error) {
-    console.error('Error retrieving entry:', error);
     next(error);
   }
 };

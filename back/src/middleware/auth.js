@@ -31,8 +31,6 @@ const authMiddleware = async (req, res, next) => {
         where: { email: email }
       });
 
-      console.log('Usuario encontrado en DB:', user ? 'Sí' : 'No');
-
       if (!user) {
         // First time login, create user in our database
         const displayName = decodedToken.name || decodedToken.email.split('@')[0];
@@ -46,16 +44,13 @@ const authMiddleware = async (req, res, next) => {
             provider: decodedToken.firebase.sign_in_provider || 'email'
           }
         });
-        console.log('Nuevo usuario creado:', user.email);
       }
 
       // Attach user to request
       req.user = user;
       req.isAdmin = user.role === 'ADMIN';
-      console.log(`Usuario adjuntado a request: ID=${user.id}, Admin=${req.isAdmin}`);
       next();
     } catch (tokenError) {
-      console.error('❌ Error verificando token:', tokenError.message);
       return next(new AppError('Not authenticated. Invalid token.', 401));
     }
   } catch (error) {
