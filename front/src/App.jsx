@@ -1,21 +1,17 @@
-import { BrowserRouter as Router } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import Header from './components/layout/Header';
+import Layout from './components/layout/Layout';
 import AppRoutes from './routes/AppRoutes';
 
-function App() {
+export default function App() {
   return (
-    <Router>
+    <BrowserRouter>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <Header />
-          <main className="py-6">
-            <AppRoutes />
-          </main>
-        </div>
+        <Layout>
+          <AppRoutes />
+        </Layout>
       </AuthProvider>
-    </Router>
+    </BrowserRouter>
   );
 }
-
-export default App;
