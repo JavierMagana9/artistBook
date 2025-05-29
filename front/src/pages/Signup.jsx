@@ -53,8 +53,8 @@ const Signup = () => {
     
     <div className="min-h-screen flex items-center justify-center bg-indigo-900 relative">
       <Waves
-        lineColor="rgba(0,92,32,0.2)"
-        backgroundColor="rgba(0,214,75,0.3)"
+        lineColor="rgba(255, 255, 255, 1)"
+        backgroundColor="rgba(79, 70, 229, 1)"
         waveSpeedX={0.02}
         waveSpeedY={0.01}
         waveAmpX={40}
