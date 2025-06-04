@@ -2,9 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const path = require('path');
 
-// Load environment variables
-dotenv.config();
+// Load environment variables - asegurar que se carga desde la ruta correcta
+dotenv.config({ path: path.join(__dirname, '../.env') });
+
+// Debug: verificar que las variables se cargan
+console.log('Environment check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL loaded:', !!process.env.DATABASE_URL);
 
 // Inicializar la aplicación Express
 const app = express();

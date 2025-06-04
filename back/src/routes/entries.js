@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { createEntry, getAllEntries, getEntryById, updateEntry, deleteEntry, getUserEntries } = require('../controllers/entries');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
-
+const prisma = require('../config/prisma');
 // Crear un middleware para verificar si es el propietario de la entrada
 // Esta función debe ir en el archivo middleware/auth.js
 const isEntryOwner = async (req, res, next) => {
