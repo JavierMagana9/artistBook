@@ -1,6 +1,6 @@
 const admin = require('firebase-admin');
 
-// Usar variables de entorno en lugar del archivo JSON
+
 const serviceAccount = {
   type: "service_account",
   project_id: process.env.FIREBASE_PROJECT_ID,
@@ -14,7 +14,7 @@ const serviceAccount = {
   client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
 };
 
-// Verificar que las variables de entorno estén configuradas
+
 if (!serviceAccount.project_id || !serviceAccount.private_key || !serviceAccount.client_email) {
   console.error('Firebase configuration is missing. Please check your environment variables.');
   throw new Error('Firebase configuration incomplete');

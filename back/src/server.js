@@ -1,7 +1,7 @@
 const app = require('./app');
 const { PrismaClient } = require('@prisma/client');
 
-// Debug: mostrar variables de entorno
+
 console.log('Environment variables check:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('PORT:', process.env.PORT);
@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 
 async function startServer() {
   try {
-    // Verificar que DATABASE_URL esté configurada
+    
     if (!process.env.DATABASE_URL) {
       console.error('DATABASE_URL environment variable is not set');
       console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('DATABASE')));
