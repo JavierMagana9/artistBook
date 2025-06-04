@@ -10,7 +10,15 @@ dotenv.config();
 const app = express();
 
 // Configurar middlewares básicos
-app.use(cors());
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.CORS_ORIGIN 
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4200'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
