@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api'
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 });
 
 // Interceptor para añadir token a cada solicitud
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -19,10 +19,7 @@ api.interceptors.request.use(
 export default api;
 
 // Mantén esta función para compatibilidad
-export const setAuthToken = () => {
-  // Esta función ya no necesita hacer nada, el interceptor se encarga
-  // de incluir el token en todas las peticiones
-};
+export { api };
 
 // User API calls
 export const getUserProfile = () => {
