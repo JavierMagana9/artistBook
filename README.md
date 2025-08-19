@@ -8,7 +8,7 @@
 
 A modern platform for artists to share and manage their creative work. Built with React, Node.js, PostgreSQL, and Firebase.
 
-**[🇪🇸 Versión en Español](#-artist-book-versión-en-español)** | **🇺🇸 English Version**
+**[🇪🇸 Versión en Español](#-🇪🇸-artist-book---versión-en-español)** | **🇺🇸 English Version**
 
 ## 📋 Table of Contents
 
