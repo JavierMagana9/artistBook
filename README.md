@@ -482,7 +482,7 @@ VITE_DEBUG=true npm run dev
 
 Una plataforma moderna para que los artistas compartan y gestionen su trabajo creativo. Construida con React, Node.js, PostgreSQL y Firebase.
 
-**🇪🇸 Versión en Español** | **[🇺🇸 English Version](#artist-book-)**
+**# 🇪🇸 Artist Book - Versión en Español** | **[🇺🇸 English Version](#artist-book-)**
 
 ## 📋 Tabla de Contenidos
 
