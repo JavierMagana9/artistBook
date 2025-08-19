@@ -472,7 +472,7 @@ VITE_DEBUG=true npm run dev
 
 ---
 
-# 🇪🇸 Artist Book - Versión en Español
+#-artist-book---versión-en-español
 
 [![React](https://img.shields.io/badge/React-18.0-blue.svg)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
