@@ -74,6 +74,10 @@ artistBook/
 └── 📄 README.md               # This file
 ```
 
+## 🚢 Deployment note
+
+If Vercel reports `Root Directory "front" does not exist`, check the dedicated [Vercel deployment guide](docs/vercel-deployment.md). That error happens before the frontend build starts and usually means the Vercel project Root Directory setting does not match the selected Git commit.
+
 ## 🚀 Quick Start
 
 ### **Prerequisites**
