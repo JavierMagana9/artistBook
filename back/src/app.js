@@ -17,10 +17,35 @@ console.log('DATABASE_URL loaded:', !!process.env.DATABASE_URL);
 const app = express();
 
 // Configurar middlewares básicos
+const defaultAllowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:4200',
+  'https://artist-book.vercel.app'
+];
+
+const allowedOrigins = [
+  ...defaultAllowedOrigins,
+  ...(process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+];
+
+const isAllowedVercelPreview = (origin) => (
+  process.env.NODE_ENV === 'production'
+  && /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
+);
+
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? process.env.CORS_ORIGIN 
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:4200'],
+  origin(origin, callback) {
+    // Allow server-to-server requests and local tools that do not send an Origin header.
+    if (!origin || allowedOrigins.includes(origin) || isAllowedVercelPreview(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${origin} is not allowed by CORS`));
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };

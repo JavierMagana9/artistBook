@@ -4,8 +4,13 @@ const { AppError } = require('../utils/errorHandler');
 // Get current user profile
 const getUserProfile = async (req, res, next) => {
   try {
-    // User is already attached to req by auth middleware
+    // User is already attached to req by auth middleware. If the token is
+    // missing or invalid, return a clear auth error instead of a generic 500.
     const user = req.user;
+
+    if (!user) {
+      return next(new AppError('Authentication required', 401));
+    }
     
     res.status(200).json({
       success: true,
@@ -25,6 +30,10 @@ const getUserProfile = async (req, res, next) => {
 // Update user profile
 const updateUserProfile = async (req, res, next) => {
   try {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+
     const { name } = req.body;
     
     if (!name) {

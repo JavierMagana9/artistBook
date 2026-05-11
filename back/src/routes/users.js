@@ -14,8 +14,10 @@ const {
 // Importar middleware
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
-// Ruta para obtener perfil (verifica que getUserProfile esté importado correctamente)
+// Profile routes must be declared before '/:id' so Express does not treat
+// the literal 'profile' segment as a dynamic user id.
 router.get('/profile', authMiddleware, getUserProfile);
+router.put('/profile', authMiddleware, updateUserProfile);
 
 // Otras rutas
 router.get('/:id', authMiddleware, getUserById);
