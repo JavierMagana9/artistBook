@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "installCommand": "cd back && yarn install --frozen-lockfile",
+  "builds": [
+    {
+      "src": "back/app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "back/app.js"
+    }
+  ]
+}
