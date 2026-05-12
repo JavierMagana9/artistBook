@@ -10,6 +10,25 @@ A modern platform for artists to share and manage their creative work. Built wit
 
 **[🇪🇸 Versión en Español](#artist-book---versión-en-español)** | **🇺🇸 English Version**
 
+## Demo Access
+
+You can explore the application using the following link:
+
+👉 https://artist-book.vercel.app
+
+To test the different views and permission levels of the app, you can use the following demo credentials:
+
+### Regular User
+
+- **Email:** user@user.com
+- **Password:** 123456
+
+### Administrator
+
+- **Email:** admin@admin.com
+- **Password:** 123456
+
+
 ## 📋 Table of Contents
 
 - [Features](#-features)
@@ -483,6 +502,24 @@ VITE_DEBUG=true npm run dev
 Una plataforma moderna para que los artistas compartan y gestionen su trabajo creativo. Construida con React, Node.js, PostgreSQL y Firebase.
 
 **# 🇪🇸 Artist Book - Versión en Español** | **[🇺🇸 English Version](#artist-book-)**
+
+## Acceso a la demo
+
+Puedes navegar por la aplicación desde el siguiente enlace:
+
+👉 https://artist-book.vercel.app
+
+Para probar las diferentes vistas y permisos de la app, puedes usar las siguientes credenciales de demo:
+
+### Usuario normal
+
+- **Email:** user@user.com
+- **Contraseña:** 123456
+
+### Administrador
+
+- **Email:** admin@admin.com
+- **Contraseña:** 123456
 
 ## 📋 Tabla de Contenidos
 
