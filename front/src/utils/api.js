@@ -1,6 +1,12 @@
 import axios from 'axios';
 
+const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+
 const getApiBaseUrl = () => {
+  if (configuredApiBaseUrl) {
+    return configuredApiBaseUrl;
+  }
+
   // In production, call the API through Vercel's same-origin rewrite. This
   // avoids browser CORS entirely: the browser talks to artist-book.vercel.app,
   // and Vercel proxies /api/* to the Railway backend server-to-server.
@@ -8,7 +14,7 @@ const getApiBaseUrl = () => {
     return '/api';
   }
 
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  return 'http://localhost:5000/api';
 };
 
 const api = axios.create({
