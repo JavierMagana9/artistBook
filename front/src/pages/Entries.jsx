@@ -92,6 +92,11 @@ export default function Entries() {
         </header>
         
         {/* Entries content */}
+        {error && (
+          <p role="alert" className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
         <section className="bg-white rounded-lg shadow-sm">
           {entries.length === 0 ? (
             <div className="text-center py-12 px-4 sm:px-6">

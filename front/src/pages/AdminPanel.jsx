@@ -43,7 +43,7 @@ export default function AdminPanel() {
       );
       
       if (confirmed) {
-        const response = await api.put(`/users/${user.id}`, {
+        await api.put(`/users/${user.id}`, {
           role: newRole
         });
         

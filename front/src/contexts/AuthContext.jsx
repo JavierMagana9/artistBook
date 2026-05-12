@@ -4,17 +4,28 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import api, { getUserProfile } from '../utils/api';
 
 const AuthContext = createContext();
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
+
+const buildFallbackUserData = (user) => ({
+  id: user.uid,
+  email: user.email,
+  name: user.displayName || user.email?.split('@')[0] || 'Artist',
+  role: 'USER',
+  isFallback: true
+});
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userData, setUserData] = useState(null); 
+  const [userData, setUserData] = useState(null);
+  const [profileError, setProfileError] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const logout = async () => {
     try {
       await signOut(auth);
       setUserData(null);
+      setProfileError(null);
       localStorage.removeItem('authToken');
       delete api.defaults.headers.common['Authorization'];
     } catch (error) {
@@ -25,29 +36,30 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      setProfileError(null);
 
       if (user) {
         try {
           const token = await user.getIdToken();
           localStorage.setItem('authToken', token);
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
-          // Fetch user profile from backend
+
           try {
             const res = await getUserProfile();
-            const userData = res.data.data;
-            setUserData(userData);
-            
-            // Guardar el ID del usuario para referencia
-            localStorage.setItem('userId', userData.id);
-            
+            const backendUserData = res.data.data;
+            setUserData(backendUserData);
+            localStorage.setItem('userId', backendUserData.id);
           } catch (profileError) {
             console.error('Error fetching profile:', profileError);
-            setUserData(null);
+            setUserData(buildFallbackUserData(user));
+            setProfileError(profileError);
+            localStorage.removeItem('userId');
           }
         } catch (err) {
           console.error('Error in auth state change:', err);
-          setUserData(null);
+          setUserData(buildFallbackUserData(user));
+          setProfileError(err);
+          localStorage.removeItem('userId');
         }
       } else {
         // User signed out
@@ -55,6 +67,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('userId');
         delete api.defaults.headers.common['Authorization'];
         setUserData(null);
+        setProfileError(null);
       }
 
       setLoading(false);
@@ -66,7 +79,8 @@ export const AuthProvider = ({ children }) => {
   const value = {
     currentUser,
     userData,
-    isAdmin: userData?.role === 'ADMIN',
+    profileError,
+    isAdmin: userData?.role === 'ADMIN' && !userData?.isFallback,
     loading,
     logout
   };
