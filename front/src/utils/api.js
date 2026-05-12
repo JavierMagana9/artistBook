@@ -1,7 +1,18 @@
 import axios from 'axios';
 
+const getApiBaseUrl = () => {
+  // In production, call the API through Vercel's same-origin rewrite. This
+  // avoids browser CORS entirely: the browser talks to artist-book.vercel.app,
+  // and Vercel proxies /api/* to the Railway backend server-to-server.
+  if (import.meta.env.PROD) {
+    return '/api';
+  }
+
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+};
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
+  baseURL: getApiBaseUrl()
 });
 
 // Interceptor para añadir token a cada solicitud
